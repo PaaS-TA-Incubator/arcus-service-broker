@@ -1,0 +1,97 @@
+buildscript {
+    repositories {
+        maven { url "https://repo.spring.io/plugins-snapshot" }
+        maven { url "http://repo.spring.io/libs-snapshot" }
+        mavenLocal()
+    }
+    dependencies {
+        classpath "io.spring.gradle:dependency-management-plugin:0.6.0.BUILD-SNAPSHOT"
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.3.0.BUILD-SNAPSHOT")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'application'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'spring-boot'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+ext {
+  springBootCfServiceBrokerVersion = "2.4.0"
+  springBootVersion = '1.3.0.BUILD-SNAPSHOT'
+  baseName = 'openpaas-service-java-broker-arcus'
+  version =  '2.5'
+//  hibernateValidatorVersion = '5.1.0.Final'
+  jsonPathVersion = '0.9.1'
+}
+
+mainClassName='org.openpaas.servicebroker.arcus.config.Application'
+version = '1.0'
+
+jar {
+    manifest {
+        attributes  'Title': 'ARCUS Broker', 'Version': version, 'Main-Class': mainClassName
+    }
+    archiveName 'openpaas-service-java-broker-arcus.jar'
+    dependsOn configurations.runtime
+    from {
+        configurations.compile.collect {it.isDirectory()? it: zipTree(it)}
+    }
+}
+
+processResources {
+
+    if (project.hasProperty('jarType')) {
+        if (project.jarType == 'openpaas_bosh') {
+            exclude 'application-mvc.properties'
+            exclude 'datasource.properties'
+            exclude 'logback.xml'
+        }
+    }
+
+}
+
+repositories {
+    mavenCentral()
+    maven { url "http://repo.spring.io/libs-snapshot" }
+}
+
+configurations.all {
+    exclude group: "org.slf4j", module: "slf4j-log4j12"
+    exclude group: "log4j", module: "log4j"
+}
+
+configurations {
+    providedRuntime
+}
+
+dependencies {
+    
+    compile files('libs/openpaas-service-java-broker.jar')
+    
+    providedRuntime("org.springframework.boot:spring-boot-starter-tomcat:${springBootVersion}")
+    compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
+    compile("org.springframework.boot:spring-boot-starter-security:${springBootVersion}")
+    //compile("org.hibernate:hibernate-validator:${hibernateValidatorVersion}")
+
+    testCompile("org.springframework.boot:spring-boot-starter-test:${springBootVersion}")
+    testCompile("com.jayway.jsonpath:json-path:${jsonPathVersion}")
+    testCompile("org.cloudfoundry:spring-boot-cf-service-broker-tests:${springBootCfServiceBrokerVersion}")
+    testCompile("org.apache.httpcomponents:httpclient:4.4.1")
+       
+    compile("org.apache.commons:commons-dbcp2")
+    compile("mysql:mysql-connector-java:5.1.27")
+    compile("org.springframework:spring-jdbc:4.0.0.M3")
+//    compile("com.fasterxml.jackson.core:jackson-core:2.6.3")
+
+    compile("com.navercorp.arcus:arcus-java-client:1.9.6")
+
+    compile("com.jcraft:jsch:0.1.53")
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.0'
+}
